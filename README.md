@@ -13,15 +13,50 @@ The simple answer: I have a cheap TP-Link TL-WR841ND router with no jffs, no USB
 
 Other alternatives are the [pixelserv](https://secure.dd-wrt.com/phpBB2/viewtopic.php?p=434120&highlight=&sid=f9c90a3539cb6c2ae0f6e124877d909b) method and  using [jffs](https://www.dd-wrt.com/phpBB2/viewtopic.php?t=307533) to store the host list.
 
-## Usage
-* Copy the text from `startup.sh`  to your `Administartion` -> `Commands` startup section
-* Copy the text from `custom.sh` to your `Administration` -> `Commands` custom script section
-* Enable `local DNS`  in `Services` -> `Services` -> `DNSMasq`
-* Enable cron `Administration` -> `Management` -> `Cron` 
-* Add cron job for automatic updates (`0 11 * * 3 root /bin/sh /tmp/custom.sh` updates every wednesday at 11AM)
-* Reboot router and open the pi-hole ad page to see if it worked: https://pi-hole.net/pages-to-test-ad-blocking-performance/
+# Usage
+
+1. Copy the [startup code](#startup-code) below to your `Administration` -> `Commands` and `Save Startup`. This will create a custom script to download a blacklist and add the domains to the dnsmasq. 
+
+2. In `Services` -> `Services` -> Enable `DNSMasq`
+
+3. In `Setup` -> `Basic Setup` -> Enable `Forced DNS Redirection`
+
+4. To enable weekly updates, in `Administration` -> `Management` -> `Cron` -> `Additional Cron Jobs` add:
+	> `0 11 * * 3 root /tmp/custom.sh`
+
+### Startup code
+
+```bash
+# wait for the rest of the services to startup
+sleep 20 
+
+# Create script to download blacklist
+echo '#!/bin/sh
+
+logger Starting blockads scripts
+
+# clean up old list
+rm /tmp/adhosts
+
+# get new list
+wget -qO- http://sbc.io/hosts/hosts | grep "^0.0.0.0" > /tmp/adhosts;
+ 
+# restart service
+killall dnsmasq
+dnsmasq -u root -g root --conf-file=/tmp/dnsmasq.conf
+
+logger Finished executing blockads script' >> /tmp/custom.sh;
+
+# add executable right 
+chmod +x /tmp/custom.sh
+
+# add blacklist to dnsmasq
+grep "addn-hosts=/tmp/adhosts" /tmp/dnsmasq.conf || echo "addn-hosts=/tmp/adhosts" >> /tmp/dnsmasq.conf;
+
+# execute script
+/tmp/custom.sh
+```
 
 ## Notes
-* For some reason the semicolons are needed at the end of pipe operations. Without these, the host filename or conf file get garbled characters
-* Both scripts print to Syslog. Enable it in `Services` -> `Syslog` to see if the scripts started
+The script print to Syslog. Enable it in `Services` -> `Syslog` to see if the scripts started. Alternatively Telnet into the router and check if `/tmp/custom.sh` exists.
 
