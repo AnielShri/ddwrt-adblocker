@@ -58,5 +58,6 @@ grep "addn-hosts=/tmp/adhosts" /tmp/dnsmasq.conf || echo "addn-hosts=/tmp/adhost
 ```
 
 ## Notes
-The script print to Syslog. Enable it in `Services` -> `Syslog` to see if the scripts started. Alternatively Telnet into the router and check if `/tmp/custom.sh` exists.
+* Tested with `Firmware: DD-WRT v3.0-r45767 std (02/17/21)` on a `TP-Link TL-WR841ND v10`
+* The script print to Syslog. Enable it in `Services` -> `Syslog` to see if the scripts started. Alternatively Telnet into the router and check if `/tmp/custom.sh` exists.
 
